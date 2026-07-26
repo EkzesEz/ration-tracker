@@ -1,6 +1,8 @@
 // Service worker — кэширует оболочку приложения, чтобы работало офлайн.
-// Версию бампай при изменении файлов, чтобы обновился кэш.
-var CACHE = "ration-v1";
+// Стратегия: СНАЧАЛА СЕТЬ, кэш — запасной вариант для офлайна. Так правки в
+// config.js/app.js/styles.css подхватываются сразу при онлайне, а не залипают.
+// Версию бампай при изменении файлов, чтобы гарантированно сбросить старый кэш.
+var CACHE = "ration-v3";
 var SHELL = [
   ".", "index.html", "styles.css", "app.js", "config.js",
   "manifest.webmanifest", "icon.svg"
@@ -22,14 +24,13 @@ self.addEventListener("fetch", function (e) {
   var url = new URL(req.url);
   // Запросы к Supabase и CDN всегда идут в сеть (не кэшируем данные/аутентификацию).
   if (url.origin !== self.location.origin) return;
-  // App shell — cache-first; остальное — network-first с откатом в кэш.
+  // Network-first: свежая версия важнее; кэш — откат для офлайна.
   e.respondWith(
-    caches.match(req).then(function (hit) {
-      var net = fetch(req).then(function (res) {
-        if (res && res.status === 200) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
-        return res;
-      }).catch(function () { return hit; });
-      return hit || net;
+    fetch(req).then(function (res) {
+      if (res && res.status === 200) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
+      return res;
+    }).catch(function () {
+      return caches.match(req).then(function (hit) { return hit || caches.match("index.html"); });
     })
   );
 });

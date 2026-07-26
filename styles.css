@@ -195,8 +195,94 @@ h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
 .modal .msg.ok { color: var(--good); }
 .modal .close { align-self: flex-end; background: transparent; border: 0; color: var(--muted); font-size: 20px; cursor: pointer; padding: 0; margin: -8px -4px 0 0; }
 
+/* tabs */
+.tabs { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--rule); border-radius: 8px; padding: 4px; }
+.tab { flex: 1; font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--ink-2); background: transparent; border: 0; padding: 9px 8px; border-radius: 5px; cursor: pointer; }
+.tab.active { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--ring); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* date nav */
+.datenav { display: flex; align-items: center; gap: 10px; }
+.datenav-arrow { width: 40px; height: 40px; flex: none; border: 1px solid var(--rule); background: var(--surface-2); color: var(--ink); border-radius: 6px; font-size: 22px; line-height: 1; cursor: pointer; }
+.datenav-arrow:hover { border-color: var(--accent); }
+.datenav-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.datenav-mid { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
+.datenav-label { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.datenav-input { font-family: var(--font-mono); font-size: 12px; padding: 3px 6px; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); color: var(--ink-2); }
+.datenav-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* calendar */
+.calnav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.calnav-title { font-size: 17px; font-weight: 700; text-transform: capitalize; }
+.cal-dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cal-dow-c { text-align: center; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cal-cell { aspect-ratio: 1 / 1; border: 1px solid var(--grid); background: var(--surface-2); border-radius: 5px; padding: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 2px; cursor: pointer; overflow: hidden; }
+.cal-cell.empty { border: 0; background: transparent; cursor: default; }
+.cal-cell.today { border-color: var(--accent); }
+.cal-cell.sel { box-shadow: inset 0 0 0 2px var(--accent); }
+.cal-cell:not(.empty):hover { border-color: var(--accent); }
+.cal-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cal-num { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); text-align: left; }
+.cal-cell.today .cal-num { color: var(--accent); font-weight: 700; }
+.cal-kc { font-family: var(--font-mono); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: auto; text-align: center; }
+.cal-bar { height: 3px; background: var(--surface); border-radius: 2px; overflow: hidden; }
+.cal-bar span { display: block; height: 100%; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11.5px; color: var(--muted); }
+.cal-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+.cal-legend .dot.under { background: var(--accent); }
+.cal-legend .dot.ok { background: var(--s-c); }
+.cal-legend .dot.none { background: var(--surface-2); border: 1px solid var(--grid); }
+
+.wk-list { display: flex; flex-direction: column; gap: 4px; }
+.wk-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--grid); flex-wrap: wrap; }
+.wk-row:last-child { border-bottom: 0; }
+.wk-lbl { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+.wk-vals { font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; }
+.wk-vals b { color: var(--ink); }
+.wk-vals.muted { color: var(--muted); }
+.wk-days { color: var(--muted); }
+.mo-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+/* plan */
+.plan-meals { display: flex; flex-direction: column; gap: 12px; }
+.plan-meal { border: 1px solid var(--grid); border-radius: 5px; overflow: hidden; }
+.plan-meal-name { font-weight: 700; font-size: 14px; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--grid); }
+.plan-opt { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--grid); align-items: center; }
+.plan-opt:last-child { border-bottom: 0; }
+.plan-key { font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--muted); border: 1px solid var(--rule); border-radius: 2px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+.plan-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.plan-what { font-size: 13.5px; line-height: 1.4; }
+.plan-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.plan-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.03em; padding: 2px 6px; border-radius: 2px; border: 1px solid var(--rule); color: var(--ink-2); }
+.plan-tag.zero { border-color: transparent; background: rgba(12,163,12,0.14); color: var(--good); }
+.plan-macros { font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.plan-add { font-family: var(--font-ui); font-size: 12px; font-weight: 600; padding: 7px 10px; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.plan-add:hover { background: var(--accent); color: #fff; }
+.plan-add:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.recipes { display: flex; flex-direction: column; gap: 12px; }
+.recipe { border: 1px solid var(--grid); border-radius: 5px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.recipe-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--grid); padding-bottom: 9px; }
+.recipe-h h3 { font-size: 15px; margin: 0; }
+.recipe-yield { font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.recipe-ing { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+.recipe-ing b, .recipe-tip b { color: var(--ink); }
+.recipe-steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.recipe-steps li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 13.5px; line-height: 1.45; counter-increment: step; align-items: start; }
+.recipe-steps li::before { content: counter(step); font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--accent); border: 1px solid var(--rule); border-radius: 2px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+.recipe-tip { font-size: 12.5px; color: var(--ink-2); background: var(--surface-2); border-radius: 3px; padding: 9px 11px; line-height: 1.45; }
+
+.hist-date-btn { font-family: var(--font-mono); font-size: 12px; color: var(--accent); background: transparent; border: 0; cursor: pointer; text-align: left; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.hist-date-btn:hover { color: var(--ink); }
+.hist-date-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 @media (max-width: 560px) {
   .kpis { grid-template-columns: repeat(2, 1fr); }
+  .mo-summary { grid-template-columns: repeat(2, 1fr); }
+  .plan-opt { grid-template-columns: 22px 1fr; }
+  .plan-add { grid-column: 2; justify-self: start; }
+  .cal-kc { font-size: 10px; }
   .tk-macros { grid-template-columns: 1fr; gap: 8px; }
   .tk-macro { flex-direction: row; align-items: center; gap: 10px; }
   .tk-macro-lbl { width: 68px; flex: none; }

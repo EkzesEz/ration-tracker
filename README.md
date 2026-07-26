@@ -37,17 +37,22 @@ python -m http.server 5173
 2. Вставь всё содержимое `schema.sql` из этой папки → **Run**.
 
 ### 2.3 Вписать ключи
-1. **Project Settings → API**.
-2. Скопируй **Project URL** и **anon / public** ключ.
+1. **Project Settings → API Keys**.
+2. Скопируй **Project URL** и **Publishable key** (начинается на `sb_publishable_…`;
+   в старых проектах он называется `anon`).
 3. Открой `config.js` и вставь их:
    ```js
    window.RATION_CONFIG = {
      SUPABASE_URL: "https://xxxx.supabase.co",
-     SUPABASE_ANON_KEY: "eyJ..."
+     SUPABASE_ANON_KEY: "sb_publishable_..."   // ← Publishable key
    };
    ```
-> `anon`-ключ публичный по дизайну — его видно в браузере, это нормально. Доступ к
-> чужим данным закрыт правилами Row Level Security из `schema.sql`.
+> **Бери именно Publishable key.** Он публичный по дизайну — его видно в браузере, это
+> нормально: доступ к чужим данным закрыт правилами Row Level Security из `schema.sql`.
+>
+> ⚠️ **Secret key (`sb_secret_…`, бывший `service_role`) сюда НЕ вставляй никогда.** Он
+> обходит всю защиту и, попав в браузер, откроет твою базу кому угодно. Он только для
+> сервера — а у этого приложения сервера нет.
 
 ### 2.4 Проверить
 Перезапусти локальный сервер, открой приложение → кнопка **«Войти / синк»** →
