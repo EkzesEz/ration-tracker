@@ -347,6 +347,64 @@
   }
   function removeCustomProduct(idx) { state.customProducts.splice(idx, 1); saveLocal(); pendingCloud = true; updateSavebar(); renderLibrary(); }
 
+  /* ══════════ поиск в USDA FoodData Central ══════════ */
+  var USDA_KEY = CFG.USDA_API_KEY || "";
+  var usdaSeq = 0, usdaTimer = null;
+  function r1(x) { return x == null ? 0 : Math.round(x * 10) / 10; }
+  // Значения на 100 г. Берём nutrientNumber (как в рабочем примере), с запасным nutrientId.
+  function usdaExtract(food) {
+    var out = { kcal: null, p: null, f: null, c: null };
+    (food.foodNutrients || []).forEach(function (n) {
+      var ids = [];
+      if (n.nutrientNumber != null) ids.push(parseInt(n.nutrientNumber, 10));
+      if (n.nutrientId != null) ids.push(+n.nutrientId);
+      var v = parseFloat(n.value); if (isNaN(v)) return;
+      if (out.kcal == null && (ids.indexOf(1008) >= 0 || ids.indexOf(208) >= 0)) out.kcal = v;
+      else if (out.p == null && (ids.indexOf(1003) >= 0 || ids.indexOf(203) >= 0)) out.p = v;
+      else if (out.f == null && (ids.indexOf(1004) >= 0 || ids.indexOf(204) >= 0)) out.f = v;
+      else if (out.c == null && (ids.indexOf(1005) >= 0 || ids.indexOf(205) >= 0)) out.c = v;
+    });
+    if (out.kcal == null) return null;
+    return { name: (food.description || "Продукт") + " · 100 г", kcal: Math.round(out.kcal), p: r1(out.p), f: r1(out.f), c: r1(out.c) };
+  }
+  function usdaSearch(q) {
+    var seq = ++usdaSeq, status = $("usda-status"), results = $("usda-results");
+    status.textContent = "Ищу…"; results.innerHTML = "";
+    // Есть ключ в конфиге (локальная разработка) — идём напрямую; иначе через
+    // серверный прокси (прод: ключ на сервере, в браузере его нет).
+    var url = USDA_KEY
+      ? ("https://api.nal.usda.gov/fdc/v1/foods/search?api_key=" + encodeURIComponent(USDA_KEY)
+        + "&query=" + encodeURIComponent(q) + "&pageSize=15&dataType=" + encodeURIComponent("Foundation,SR Legacy"))
+      : ("/.netlify/functions/usda?q=" + encodeURIComponent(q));
+    fetch(url).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (j) {
+        if (seq !== usdaSeq) return;
+        var foods = (j.foods || []).map(usdaExtract).filter(Boolean);
+        if (!foods.length) { status.textContent = "Ничего не найдено."; return; }
+        status.textContent = "Найдено " + (j.totalHits || foods.length) + ", показаны первые " + foods.length + " (на 100 г):";
+        renderUsdaResults(foods);
+      })
+      .catch(function (e) {
+        if (seq !== usdaSeq) return;
+        status.textContent = "Ошибка запроса (" + e.message + "). Проверь интернет; если это CORS — см. README.";
+      });
+  }
+  function renderUsdaResults(foods) {
+    var host = $("usda-results"); host.innerHTML = "";
+    foods.forEach(function (o) {
+      var row = el("div", "usda-row");
+      var body = el("div", "usda-body");
+      body.appendChild(el("div", "usda-name", o.name));
+      body.appendChild(el("div", "usda-macros", o.kcal + " ккал · Б " + o.p + " · Ж " + o.f + " · У " + o.c));
+      row.appendChild(body);
+      var acts = el("div", "usda-acts");
+      acts.appendChild(mkBtn("+ в день", function () { addProduct(o); }, "usda-btn"));
+      acts.appendChild(mkBtn("★ в базу", function () { addCustomProduct(o); }, "usda-btn ghost"));
+      row.appendChild(acts);
+      host.appendChild(row);
+    });
+  }
+
   /* ══════════ render: норма ══════════ */
   function renderKpi() {
     var d = N(), host = $("kpis"); host.innerHTML = "";
@@ -597,6 +655,15 @@
     function clearForm() { $("tk-form").reset(); $("tk-f-name").focus(); }
     $("tk-add-day").addEventListener("click", function () { var o = readForm(); if (isNaN(o.kcal)) { $("tk-f-kcal").focus(); return; } o.name = o.name || "Продукт"; addProduct(o); clearForm(); });
     $("tk-form").addEventListener("submit", function (e) { e.preventDefault(); var o = readForm(); if (!o.name) { $("tk-f-name").focus(); return; } if (isNaN(o.kcal)) { $("tk-f-kcal").focus(); return; } if (addCustomProduct(o)) clearForm(); });
+
+    // поиск USDA (живой, по мере ввода). Работает через прокси в проде или
+    // напрямую при заданном локальном ключе.
+    $("usda-q").addEventListener("input", function (e) {
+      var q = e.target.value.trim();
+      clearTimeout(usdaTimer);
+      if (q.length < 2) { usdaSeq++; $("usda-status").textContent = ""; $("usda-results").innerHTML = ""; return; }
+      usdaTimer = setTimeout(function () { usdaSearch(q); }, 350);
+    });
 
     // очистка / перенос
     $("tk-reset").addEventListener("click", resetDay);

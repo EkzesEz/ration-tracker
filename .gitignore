@@ -1,0 +1,7 @@
+# Ключи не коммитим — в проде config.js генерируется при сборке из env-переменных
+# Netlify, локально копируется из config.example.js.
+config.js
+
+node_modules
+.netlify
+.DS_Store

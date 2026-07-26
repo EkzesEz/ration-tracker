@@ -1,0 +1,8 @@
+# Настройки сборки Netlify (можно не заполнять поля в UI — они берутся отсюда).
+[build]
+  command = "node scripts/gen-config.js"
+  publish = "."
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "18"

@@ -9,7 +9,49 @@
 
 ---
 
+## 🔑 Ключи и переменные окружения (важно)
+
+**Ключи в репозиторий не коммитятся.** `config.js` в `.gitignore`.
+
+- **В проде (Netlify)** `config.js` генерируется при сборке скриптом `scripts/gen-config.js`
+  из переменных окружения. USDA-ключ в клиент не попадает вообще — поиск идёт через
+  серверную функцию `netlify/functions/usda.js`.
+- **Локально** копируешь `config.example.js` → `config.js` и вписываешь ключи (файл
+  не уедет в гит).
+
+**Переменные окружения на Netlify** (Site settings → Environment variables):
+
+| Переменная | Значение |
+|---|---|
+| `SUPABASE_URL` | Project URL из Supabase |
+| `SUPABASE_ANON_KEY` | Publishable-ключ (`sb_publishable_…`) |
+| `USDA_API_KEY` | ключ FoodData Central (только на сервере, в браузер не отдаётся) |
+
+**Настройки сборки** уже заданы в `netlify.toml` (поля в UI можно оставить пустыми):
+build command `node scripts/gen-config.js`, publish `.`, functions `netlify/functions`.
+
+> Publishable-ключ Supabase всё равно окажется в клиенте (так работает Supabase SDK,
+> доступ закрыт RLS — это безопасно), но **из репозитория он убран**. USDA-ключ не
+> виден нигде в браузере.
+
+**Если `config.js` уже был закоммичен** — убери его из отслеживания (файл на диске
+останется):
+
+```bash
+git rm --cached config.js
+git commit -m "chore: untrack config.js (keys move to env)"
+```
+
+Ключи из старого коммита остаются в истории git. USDA-ключ был засвечен —
+**перевыпусти его** на fdc.nal.usda.gov и положи новый только в env Netlify.
+Publishable-ключ Supabase перевыпускать не нужно (он публичный по дизайну).
+
+---
+
 ## 1. Запустить локально (проверить, что работает)
+
+Скопируй `config.example.js` в `config.js`, впиши ключи Supabase (и, для локального
+поиска USDA без Netlify, `USDA_API_KEY`). Затем любой статический сервер из папки:
 
 Нужен любой статический сервер. Из папки `ration-tracker`:
 

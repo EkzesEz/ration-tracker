@@ -2,7 +2,7 @@
 // Стратегия: СНАЧАЛА СЕТЬ, кэш — запасной вариант для офлайна. Так правки в
 // config.js/app.js/styles.css подхватываются сразу при онлайне, а не залипают.
 // Версию бампай при изменении файлов, чтобы гарантированно сбросить старый кэш.
-var CACHE = "ration-v5";
+var CACHE = "ration-v7";
 var SHELL = [
   ".", "index.html", "styles.css", "app.js", "config.js",
   "manifest.webmanifest", "icon.svg"

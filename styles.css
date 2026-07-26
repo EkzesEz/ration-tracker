@@ -293,6 +293,21 @@ h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
 .tk-libdel:hover { color: var(--s-f); }
 .tk-libdel:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
+/* поиск USDA */
+.usda { display: flex; flex-direction: column; gap: 8px; }
+.usda #usda-q { font-size: 15px; }
+.usda-status { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.usda-results { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.usda-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 9px 11px; border: 1px solid var(--grid); border-radius: 4px; background: var(--surface-2); }
+.usda-body { min-width: 0; }
+.usda-name { font-size: 13px; color: var(--ink); line-height: 1.35; }
+.usda-macros { font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ink-2); margin-top: 2px; }
+.usda-acts { display: flex; flex-direction: column; gap: 4px; }
+.usda-btn { font-family: var(--font-ui); font-size: 11.5px; font-weight: 600; padding: 5px 8px; border-radius: 3px; border: 0; background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap; }
+.usda-btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.usda-btn:hover { filter: brightness(1.05); }
+.usda-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
 /* перенос дня */
 .move-box { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; background: var(--surface-2); border-radius: 5px; font-size: 13px; color: var(--ink-2); }
 
