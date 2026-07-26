@@ -18,7 +18,7 @@
         <span class="brand-mark">🍚</span>
         <div>
           <h1>Мой рацион</h1>
-          <p class="brand-sub">трекер набора массы · 69 → 74 кг</p>
+          <p class="brand-sub">трекер калорий и БЖУ</p>
         </div>
       </div>
       <div class="auth" id="auth"></div>
@@ -36,11 +36,18 @@
     <div id="view-day">
 
       <section class="card">
-        <div class="switch" role="group" aria-label="Фаза плана">
-          <button type="button" data-phase="1" aria-pressed="true">Фаза 1 · 2780</button>
-          <button type="button" data-phase="2" aria-pressed="false">Фаза 2 · 3080</button>
+        <div class="norm-head">
+          <div class="card-title">Дневная норма</div>
+          <button type="button" class="btn" id="norm-edit">Изменить</button>
         </div>
         <div class="kpis" id="kpis"></div>
+        <div class="norm-form" id="norm-form" hidden>
+          <label>Ккал<input type="number" inputmode="numeric" id="norm-kcal" /></label>
+          <label>Белок<input type="number" inputmode="numeric" id="norm-p" /></label>
+          <label>Жиры<input type="number" inputmode="numeric" id="norm-f" /></label>
+          <label>Углев.<input type="number" inputmode="numeric" id="norm-c" /></label>
+          <button type="button" class="btn primary" id="norm-ok">Применить</button>
+        </div>
       </section>
 
       <section class="card">
@@ -59,7 +66,7 @@
         <div class="tk-top">
           <div class="tk-head">
             <span class="tk-eaten" id="tk-eaten">0</span>
-            <span class="tk-target" id="tk-target">/ 2780 ккал</span>
+            <span class="tk-target" id="tk-target">/ 3080 ккал</span>
           </div>
           <div class="tk-remain" id="tk-remain"></div>
         </div>
@@ -74,19 +81,29 @@
           <div class="tk-mealchips" id="tk-mealchips"></div>
           <div class="tk-add-lbl">Добавить продукт <span class="tk-active" id="tk-active"></span></div>
           <div class="tk-quick" id="tk-quick"></div>
-          <div class="tk-add-lbl">Или впиши свой продукт</div>
+          <div class="tk-add-lbl">Свой продукт</div>
           <form class="tk-form" id="tk-form">
-            <input class="tk-in tk-in-name" id="tk-f-name" type="text" placeholder="Напр. Шаурма" aria-label="Название продукта" />
+            <input class="tk-in tk-in-name" id="tk-f-name" type="text" placeholder="Название" aria-label="Название продукта" />
             <input class="tk-in" id="tk-f-kcal" type="number" inputmode="decimal" step="any" placeholder="ккал" aria-label="Калории" />
             <input class="tk-in" id="tk-f-p" type="number" inputmode="decimal" step="any" placeholder="Б" aria-label="Белки, г" />
             <input class="tk-in" id="tk-f-f" type="number" inputmode="decimal" step="any" placeholder="Ж" aria-label="Жиры, г" />
             <input class="tk-in" id="tk-f-c" type="number" inputmode="decimal" step="any" placeholder="У" aria-label="Углеводы, г" />
-            <button class="tk-addbtn" type="submit">Добавить</button>
+            <div class="tk-form-btns">
+              <button class="tk-addbtn ghost" type="button" id="tk-add-day">+ в день</button>
+              <button class="tk-addbtn" type="submit">★ в базу</button>
+            </div>
           </form>
+
           <div class="tk-actions">
             <button class="tk-reset" id="tk-reset" type="button">Очистить этот день</button>
-            <span class="tk-persist" id="tk-persist"></span>
+            <button class="tk-reset" id="move-toggle" type="button">Перенести день…</button>
           </div>
+          <div class="move-box" id="move-box" hidden>
+            <span>Перенести всё из этого дня на:</span>
+            <input type="date" id="move-date" class="datenav-input" />
+            <button type="button" class="btn" id="move-go">Перенести</button>
+          </div>
+          <div class="tk-persist" id="tk-persist"></div>
         </div>
       </section>
 
@@ -135,7 +152,7 @@
     <div id="view-plan" hidden>
       <section class="card">
         <div class="card-title">Примеры еды по приёмам</div>
-        <div class="card-sub">Вариант «А» — базовый. Кнопка «+ в день» кладёт этот приём в выбранный день на вкладке «День».</div>
+        <div class="card-sub">Кнопка «+ в день» кладёт этот приём в выбранный день на вкладке «День».</div>
         <div class="plan-meals" id="plan-meals"></div>
       </section>
 
@@ -147,9 +164,14 @@
     </div>
 
     <footer class="app-foot">
-      <p>Локальная копия в браузере есть всегда; при входе те же данные лежат в твоём Supabase и подтягиваются на любом устройстве. Логировать можно любой день — выбирай дату на вкладке «День» или тапни день в календаре.</p>
+      <p>Локально всё пишется сразу — ничего не теряется. В облако сохраняется по кнопке «Сохранить» (когда ты вошёл). Логировать можно любой день.</p>
     </footer>
 
+  </div>
+
+  <div class="savebar" id="savebar" hidden>
+    <span class="savebar-msg" id="savebar-msg">Есть несохранённые изменения</span>
+    <button type="button" class="btn primary" id="save-btn">Сохранить в облако</button>
   </div>
 
   <script src="config.js"></script>

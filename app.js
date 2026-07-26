@@ -1,11 +1,8 @@
 "use strict";
 (function () {
 
-  /* ══════════ данные плана ══════════ */
-  var PHASE = {
-    1: { kcal: 2780, p: 157, f: 99,  c: 310, rate: "+1,2" },
-    2: { kcal: 3080, p: 172, f: 115, c: 334, rate: "+2,0" }
-  };
+  /* ══════════ норма по умолчанию (бывшая «фаза 2»), дальше настраивается ══════════ */
+  var DEFAULT_NORM = { kcal: 3080, p: 172, f: 115, c: 334 };
   var MEAL_NAMES = ["Завтрак", "Шейк", "Обед", "Перекус", "Ужин", "Другое"];
 
   var LIB = [
@@ -56,6 +53,14 @@
       { name: "Салат Цезарь с курицей · 160 г", kcal: 291, p: 14, f: 19, c: 15 },
       { name: "Онигири Филадельфия · 100 г", kcal: 254, p: 5, f: 6, c: 44 },
       { name: "Мясо по-французски с картофелем · 250 г", kcal: 548, p: 18, f: 38, c: 35 }
+    ] },
+    { g: "Вкусно и Точка", items: [
+      { name: "Тройной чизбургер · 202 г", kcal: 538, p: 34, f: 29, c: 34 },
+      { name: "Биг Хит (биг мак) · 216 г", kcal: 503, p: 25, f: 25, c: 45 },
+      { name: "Большая картошка фри · 147 г", kcal: 425, p: 5, f: 20, c: 53 },
+      { name: "Пирожок с вишней · 80 г", kcal: 290, p: 2.4, f: 12, c: 43 },
+      { name: "Сырный соус · 25 г", kcal: 91, p: 0.5, f: 9.2, c: 1.5 },
+      { name: "Кола зеро · 500 мл", kcal: 2, p: 0, f: 0, c: 0.5 }
     ] }
   ];
 
@@ -73,7 +78,6 @@
     ] }
   ];
 
-  // Примеры еды для вкладки «План»
   var PLAN_MEALS = [
     { name: "Завтрак", options: [
       { k: "А", what: "Овсянка 60 г на молоке 250 + банан + 20 г арахисовой пасты", kcal: 610, p: 21, f: 22, c: 81, cook: 3 },
@@ -159,23 +163,25 @@
   /* ══════════ state ══════════ */
   var LKEY = "ration-app-v1";
   var uid = 0;
-  var current = 1;
   var view = "day";
   var selectedDate = todayStr();
   var calY, calM;
-  var state = { days: {}, updatedAt: 0 };
+  var state = { days: {}, norm: null, customProducts: [], updatedAt: 0 };
   var meals = [];
   var activeId = null;
   var openState = {}, libOpen = {};
+  var pendingCloud = false;   // есть локальные изменения, не отправленные в облако
 
   var LS = (function () { try { var k = "__t"; localStorage.setItem(k, "1"); localStorage.removeItem(k); return localStorage; } catch (e) { return null; } })();
 
+  function N() { return state.norm || DEFAULT_NORM; }
   function makeMeal(name, items) { return { id: ++uid, name: name || "Приём", items: (items || []).map(cloneItem) }; }
   function buildFrom(list) { return (list || []).map(function (m) { return makeMeal(m.name, m.items); }); }
   function saveLocal() { if (LS) { try { LS.setItem(LKEY, JSON.stringify(state)); } catch (e) {} } }
-  function touch() { state.updatedAt = Date.now(); }
   function commitDay() { state.days[selectedDate] = meals.map(function (m) { return { name: m.name, items: m.items.map(cloneItem) }; }); }
-  function persist() { commitDay(); touch(); saveLocal(); pushRemoteSoon(); }
+
+  // Любое изменение: пишем локально сразу (не теряется), но в облако — только по кнопке.
+  function markLocal() { commitDay(); saveLocal(); pendingCloud = true; updateSavebar(); }
 
   function hydrateDay(dateStr, seedIfEmpty) {
     if (!Array.isArray(state.days[dateStr])) {
@@ -189,16 +195,26 @@
   function loadLocal() {
     var raw = LS ? LS.getItem(LKEY) : null, parsed = null;
     if (raw !== null) { try { parsed = JSON.parse(raw); } catch (e) {} }
-    state = (parsed && parsed.days) ? { days: parsed.days, updatedAt: parsed.updatedAt || 0 } : { days: {}, updatedAt: 0 };
+    state = {
+      days: (parsed && parsed.days) ? parsed.days : {},
+      norm: (parsed && parsed.norm) ? parsed.norm : null,
+      customProducts: (parsed && Array.isArray(parsed.customProducts)) ? parsed.customProducts : [],
+      updatedAt: (parsed && parsed.updatedAt) || 0
+    };
     hydrateDay(selectedDate, true);
   }
 
   /* ══════════ Supabase sync ══════════ */
-  var sb = null, session = null, pushTimer = null;
+  var sb = null, session = null;
   var CFG = window.RATION_CONFIG || {};
   var HAS_CFG = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 
   function banner(text, kind) { var b = $("sync-banner"); if (!text) { b.hidden = true; return; } b.hidden = false; b.textContent = text; b.className = "sync-banner" + (kind ? " " + kind : ""); }
+  function updateSavebar() {
+    var bar = $("savebar");
+    if (session && pendingCloud) { bar.hidden = false; $("savebar-msg").textContent = "Есть несохранённые изменения"; }
+    else bar.hidden = true;
+  }
 
   function loadSupabaseLib() {
     return new Promise(function (resolve, reject) {
@@ -219,25 +235,32 @@
       sb.auth.onAuthStateChange(function (_e, s) { session = s; onAuthChange(); });
     }).catch(function () { banner("Не удалось загрузить библиотеку синка (нет сети?). Работаешь локально — данные не потеряются.", "warn"); });
   }
-  function onAuthChange() { renderAuth(); if (session) { banner("Вошёл как " + session.user.email + ". Синхронизирую…", "ok"); pullRemote(); } else banner("Не в аккаунте — данные только на этом устройстве. Войди, чтобы видеть их и на телефоне, и на ПК.", "warn"); }
+  function onAuthChange() { renderAuth(); updateSavebar(); if (session) { banner("Вошёл как " + session.user.email + ". Тяну свежее из облака…", "ok"); pullRemote(); } else banner("Не в аккаунте — данные только на этом устройстве. Войди, чтобы сохранять в облако.", "warn"); }
   function pullRemote() {
     if (!sb || !session) return;
     sb.from("tracker_state").select("data, updated_at").eq("user_id", session.user.id).maybeSingle().then(function (r) {
       if (r.error) { banner("Синк: ошибка чтения (" + r.error.message + "). Локальная копия цела.", "warn"); return; }
       var remote = r.data ? r.data.data : null, remoteAt = remote && remote.updatedAt ? remote.updatedAt : 0;
-      if (remote && remoteAt > (state.updatedAt || 0)) {
-        state = { days: remote.days || {}, updatedAt: remoteAt };
+      // Облако новее локального — принимаем (но не затираем несохранённые локальные правки).
+      if (remote && remoteAt > (state.updatedAt || 0) && !pendingCloud) {
+        state = { days: remote.days || {}, norm: remote.norm || null, customProducts: remote.customProducts || [], updatedAt: remoteAt };
         hydrateDay(selectedDate, false); saveLocal(); renderAll();
         banner("Синхронизировано ✓ (подтянул свежую версию из облака).", "ok");
-      } else { pushRemote(true); }
+      } else if (remote && remoteAt > (state.updatedAt || 0) && pendingCloud) {
+        banner("В облаке есть более свежая версия, но у тебя несохранённые правки. Сохранишь — твоя версия победит.", "warn");
+      } else { banner("Готово. Несохранённое отправится в облако по кнопке «Сохранить».", "ok"); }
     });
   }
-  function pushRemoteSoon() { if (!sb || !session) return; clearTimeout(pushTimer); pushTimer = setTimeout(function () { pushRemote(false); }, 900); }
-  function pushRemote(silent) {
+  function saveCloud() {
     if (!sb || !session) return;
+    commitDay(); state.updatedAt = Date.now(); saveLocal();
+    $("savebar-msg").textContent = "Сохраняю…";
     sb.from("tracker_state").upsert({ user_id: session.user.id, data: state, updated_at: new Date().toISOString() }, { onConflict: "user_id" }).then(function (r) {
-      if (r.error) banner("Синк: не удалось сохранить в облако (" + r.error.message + "). Локально всё на месте.", "warn");
-      else if (!silent) banner("Сохранено в облако ✓", "ok");
+      if (r.error) { banner("Не удалось сохранить в облако (" + r.error.message + "). Локально всё на месте.", "warn"); $("savebar-msg").textContent = "Ошибка — попробуй ещё раз"; }
+      else { pendingCloud = false; updateSavebar(); banner("Сохранено в облако ✓", "ok"); }
+    }, function (err) {
+      banner("Ошибка сети при сохранении. Локально всё цело, попробуй ещё раз.", "warn");
+      $("savebar-msg").textContent = "Ошибка — попробуй ещё раз";
     });
   }
 
@@ -251,7 +274,7 @@
     var back = el("div", "modal-backdrop"), m = el("div", "modal");
     var close = el("button", "close", "×"); close.addEventListener("click", function () { back.remove(); }); m.appendChild(close);
     m.appendChild(el("h2", null, "Вход / регистрация"));
-    m.appendChild(el("p", null, "Email + пароль. Первый раз — «Зарегистрироваться», потом «Войти». Один аккаунт связывает телефон и ПК."));
+    m.appendChild(el("p", null, "Email + пароль. Первый раз — «Зарегистрироваться», потом «Войти»."));
     var email = document.createElement("input"); email.type = "email"; email.placeholder = "email"; email.autocomplete = "email";
     var pass = document.createElement("input"); pass.type = "password"; pass.placeholder = "пароль (мин. 6)"; pass.autocomplete = "current-password";
     m.appendChild(email); m.appendChild(pass);
@@ -267,8 +290,8 @@
 
   /* ══════════ операции с днём ══════════ */
   function findMeal(id) { for (var i = 0; i < meals.length; i++) if (meals[i].id === id) return meals[i]; return null; }
-  function addMeal(name) { var m = makeMeal(name, []); meals.push(m); activeId = m.id; persist(); renderTracker(); }
-  function removeMeal(id) { meals = meals.filter(function (m) { return m.id !== id; }); if (activeId === id) activeId = meals.length ? meals[meals.length - 1].id : null; persist(); renderTracker(); }
+  function addMeal(name) { var m = makeMeal(name, []); meals.push(m); activeId = m.id; markLocal(); renderTracker(); }
+  function removeMeal(id) { meals = meals.filter(function (m) { return m.id !== id; }); if (activeId === id) activeId = meals.length ? meals[meals.length - 1].id : null; markLocal(); renderTracker(); }
   function setActive(id) { activeId = id; renderTracker(); }
   function addProduct(o) {
     var m = findMeal(activeId);
@@ -276,12 +299,12 @@
     var ex = null;
     for (var i = 0; i < m.items.length; i++) if (m.items[i].name === o.name) { ex = m.items[i]; break; }
     if (ex) ex.qty += 1; else m.items.push(cloneItem({ name: o.name, kcal: o.kcal, p: o.p, f: o.f, c: o.c, qty: 1 }));
-    persist(); renderTracker();
+    markLocal(); renderTracker();
   }
-  function changeQty(id, idx, delta) { var m = findMeal(id); if (!m || !m.items[idx]) return; m.items[idx].qty = Math.round((m.items[idx].qty + delta) * 100) / 100; if (m.items[idx].qty <= 0) m.items.splice(idx, 1); persist(); renderTracker(); }
-  function setQty(id, idx, val) { var m = findMeal(id); if (!m || !m.items[idx]) return; var q = parseFloat(String(val).replace(",", ".")); if (isNaN(q) || q <= 0) { renderTracker(); return; } m.items[idx].qty = q; persist(); renderTracker(); }
-  function removeItem(id, idx) { var m = findMeal(id); if (!m) return; m.items.splice(idx, 1); persist(); renderTracker(); }
-  function resetDay() { meals = []; activeId = null; persist(); renderTracker(); }
+  function changeQty(id, idx, delta) { var m = findMeal(id); if (!m || !m.items[idx]) return; m.items[idx].qty = Math.round((m.items[idx].qty + delta) * 100) / 100; if (m.items[idx].qty <= 0) m.items.splice(idx, 1); markLocal(); renderTracker(); }
+  function setQty(id, idx, val) { var m = findMeal(id); if (!m || !m.items[idx]) return; var q = parseFloat(String(val).replace(",", ".")); if (isNaN(q) || q <= 0) { renderTracker(); return; } m.items[idx].qty = q; markLocal(); renderTracker(); }
+  function removeItem(id, idx) { var m = findMeal(id); if (!m) return; m.items.splice(idx, 1); markLocal(); renderTracker(); }
+  function resetDay() { meals = []; activeId = null; markLocal(); renderTracker(); renderHistory(); }
   function toggleItem(id, name) { openState[id + "|" + name] = !openState[id + "|" + name]; renderTracker(); }
   function toggleLib(name) { libOpen[name] = !libOpen[name]; renderLibrary(); }
   function mealKcal(m) { var s = 0; m.items.forEach(function (it) { s += it.kcal * it.qty; }); return s; }
@@ -290,32 +313,64 @@
   function setDate(dateStr) { selectedDate = dateStr; hydrateDay(selectedDate, false); renderDateNav(); renderTracker(); renderHistory(); }
   function shiftDate(delta) { var d = parseKey(selectedDate); d.setDate(d.getDate() + delta); setDate(keyOf(d)); }
 
-  /* добавить готовый пример из плана в выбранный день */
+  function moveDay(toDate) {
+    if (!toDate || toDate === selectedDate) { banner("Выбери другую дату для переноса.", "warn"); return; }
+    commitDay();
+    var src = state.days[selectedDate] || [];
+    if (!src.length) { banner("В этом дне нечего переносить.", "warn"); return; }
+    if (Array.isArray(state.days[toDate]) && state.days[toDate].length) {
+      if (!window.confirm("В дне " + toDate + " уже есть записи. Заменить их содержимым " + selectedDate + "?")) return;
+    }
+    state.days[toDate] = src.map(function (m) { return { name: m.name, items: (m.items || []).map(cloneItem) }; });
+    state.days[selectedDate] = [];
+    meals = []; activeId = null;
+    saveLocal(); pendingCloud = true; updateSavebar();
+    $("move-box").hidden = true;
+    renderTracker(); renderHistory();
+    banner("Перенёс день на " + labelDate(toDate).replace(" · сегодня", "") + ". Этот день очищен. Не забудь «Сохранить».", "ok");
+  }
+
   function addExample(mealName, opt) {
     var m = makeMeal(mealName, [{ name: mealName + " «" + opt.k + "»: " + opt.what, kcal: opt.kcal, p: opt.p, f: opt.f, c: opt.c, qty: 1 }]);
-    meals.push(m); activeId = m.id; persist();
+    meals.push(m); activeId = m.id; markLocal();
     showView("day"); renderTracker();
     banner("Добавлено «" + mealName + " " + opt.k + "» в день " + labelDate(selectedDate).replace(" · сегодня", "") + " ✓", "ok");
   }
 
-  /* ══════════ render: день ══════════ */
+  /* ══════════ свои продукты в базе ══════════ */
+  function addCustomProduct(o) {
+    if (!o.name || isNaN(o.kcal)) return false;
+    state.customProducts.push({ name: o.name, kcal: +o.kcal, p: +o.p || 0, f: +o.f || 0, c: +o.c || 0 });
+    saveLocal(); pendingCloud = true; updateSavebar(); renderLibrary();
+    banner("Продукт «" + o.name + "» добавлен в базу (группа «Мои продукты»). Не забудь «Сохранить».", "ok");
+    return true;
+  }
+  function removeCustomProduct(idx) { state.customProducts.splice(idx, 1); saveLocal(); pendingCloud = true; updateSavebar(); renderLibrary(); }
+
+  /* ══════════ render: норма ══════════ */
   function renderKpi() {
-    var d = PHASE[current], host = $("kpis"); host.innerHTML = "";
-    [{ l: "Калории", v: fmt(d.kcal), s: "ккал/день" }, { l: "Белок", v: d.p, s: "г" }, { l: "Жиры", v: d.f, s: "г" }, { l: "Темп", v: d.rate, s: "кг/мес" }].forEach(function (c) {
+    var d = N(), host = $("kpis"); host.innerHTML = "";
+    [{ l: "Калории", v: fmt(d.kcal), s: "ккал" }, { l: "Белок", v: d.p, s: "г" }, { l: "Жиры", v: d.f, s: "г" }, { l: "Углеводы", v: d.c, s: "г" }].forEach(function (c) {
       var k = el("div", "kpi"); k.appendChild(el("span", "k-label", c.l));
       var v = el("span", "k-val"); v.innerHTML = c.v + " <small>" + c.s + "</small>"; k.appendChild(v); host.appendChild(k);
     });
     $("tk-target").textContent = "/ " + fmt(d.kcal) + " ккал";
   }
-
-  function renderDateNav() {
-    $("date-label").textContent = labelDate(selectedDate);
-    $("date-input").value = selectedDate;
-    $("date-today").style.visibility = (selectedDate === todayStr()) ? "hidden" : "visible";
+  function fillNormForm() { var d = N(); $("norm-kcal").value = d.kcal; $("norm-p").value = d.p; $("norm-f").value = d.f; $("norm-c").value = d.c; }
+  function saveNorm() {
+    var kcal = parseFloat($("norm-kcal").value);
+    if (isNaN(kcal) || kcal <= 0) { $("norm-kcal").focus(); return; }
+    state.norm = { kcal: kcal, p: parseFloat($("norm-p").value) || 0, f: parseFloat($("norm-f").value) || 0, c: parseFloat($("norm-c").value) || 0 };
+    saveLocal(); pendingCloud = true; updateSavebar();
+    $("norm-form").hidden = true;
+    renderKpi(); renderTracker(); if (view === "cal") renderCalendar();
   }
 
+  /* ══════════ render: день ══════════ */
+  function renderDateNav() { $("date-label").textContent = labelDate(selectedDate); $("date-input").value = selectedDate; $("date-today").style.visibility = (selectedDate === todayStr()) ? "hidden" : "visible"; }
+
   function renderTracker() {
-    var d = PHASE[current], kc = 0, p = 0, f = 0, c = 0, itemCount = 0;
+    var d = N(), kc = 0, p = 0, f = 0, c = 0, itemCount = 0;
     meals.forEach(function (m) { m.items.forEach(function (it) { kc += it.kcal * it.qty; p += it.p * it.qty; f += it.f * it.qty; c += it.c * it.qty; itemCount++; }); });
 
     $("tk-eaten").textContent = fmt(rnd(kc));
@@ -335,8 +390,8 @@
 
     var msg;
     if (itemCount === 0) msg = "Пусто — добавь приём, потом собери его из продуктов.";
-    else if (p > d.p) msg = "Белок уже перебран на " + rnd(p - d.p) + " г — упор на углеводы, а не на ещё один творог.";
-    else if (kc > d.kcal + 120) msg = "Перебор по калориям — на этот день можно остановиться.";
+    else if (d.p && p > d.p) msg = "Белок перебран на " + rnd(p - d.p) + " г — упор на углеводы.";
+    else if (kc > d.kcal + 120) msg = "Перебор по калориям.";
     else if (kc >= d.kcal - 120) msg = "Норма почти закрыта.";
     else msg = "До нормы " + fmt(rnd(d.kcal - kc)) + " ккал.";
     $("tk-hint").textContent = msg;
@@ -378,13 +433,16 @@
 
   function renderLibrary() {
     var q = $("tk-quick"); q.innerHTML = "";
-    LIB.forEach(function (grp) {
+    var groups = LIB.slice();
+    if (state.customProducts && state.customProducts.length) groups = [{ g: "Мои продукты", custom: true, items: state.customProducts }].concat(groups);
+    groups.forEach(function (grp) {
       var wrap = el("div", "tk-group"); wrap.appendChild(el("div", "tk-group-lbl", grp.g));
       var chips = el("div", "tk-group-chips");
-      grp.items.forEach(function (o) {
+      grp.items.forEach(function (o, idx) {
         var open = !!libOpen[o.name], item = el("div", "tk-libitem");
         item.appendChild(mkBtn((open ? "▾ " : "▸ ") + o.name + " · " + o.kcal, function () { toggleLib(o.name); }, "tk-libname"));
         var add = mkBtn("+", function () { addProduct(o); }, "tk-libadd"); add.setAttribute("aria-label", "Добавить: " + o.name); item.appendChild(add);
+        if (grp.custom) { var del = mkBtn("×", function () { removeCustomProduct(idx); }, "tk-libdel"); del.setAttribute("aria-label", "Удалить из базы: " + o.name); item.appendChild(del); }
         chips.appendChild(item);
         if (open) chips.appendChild(el("div", "tk-libdetail", "Б " + o.p + " · Ж " + o.f + " · У " + o.c + " г на порцию"));
       });
@@ -393,14 +451,14 @@
   }
 
   function renderHistory() {
-    var d = PHASE[current];
+    var d = N();
     var dates = Object.keys(state.days).filter(function (k) { return k !== selectedDate && Array.isArray(state.days[k]) && state.days[k].length; }).sort();
     var host = $("history-list"), avgEl = $("history-avg"); host.innerHTML = "";
     if (dates.length === 0) { host.appendChild(el("div", "tk-empty", "Другие дни появятся здесь по мере заполнения.")); avgEl.textContent = ""; return; }
     var show = dates.slice(-10).reverse(), max = d.kcal * 1.25;
     show.forEach(function (k) {
       var kc = dayMacros(state.days[k]).kcal, row = el("div", "hist-row");
-      var db = mkBtn(labelDate(k).replace(/, /, " "), function () { setDate(k); }, "hist-date-btn"); row.appendChild(db);
+      row.appendChild(mkBtn(labelDate(k).replace(/, /, " "), function () { setDate(k); }, "hist-date-btn"));
       var track = el("div", "hist-track"), fl = el("div", "hist-fill");
       fl.style.width = Math.min(100, max ? kc / max * 100 : 0) + "%"; fl.style.background = kc >= d.kcal ? "var(--s-c)" : "var(--accent)"; track.appendChild(fl);
       var mark = el("div", "hist-mark"); mark.style.left = Math.min(100, d.kcal / max * 100) + "%"; track.appendChild(mark);
@@ -413,7 +471,7 @@
 
   /* ══════════ render: календарь ══════════ */
   function renderCalendar() {
-    var d = PHASE[current];
+    var d = N();
     $("cal-title").textContent = MONTHS[calM] + " " + calY;
     var dow = $("cal-dow"); dow.innerHTML = ""; DOW.forEach(function (w) { dow.appendChild(el("span", "cal-dow-c", w)); });
 
@@ -423,11 +481,8 @@
     for (var dd = 1; dd <= days; dd++) {
       var k = calY + "-" + pad2(calM + 1) + "-" + pad2(dd);
       var kc = (Array.isArray(state.days[k])) ? dayMacros(state.days[k]).kcal : 0;
-      var cls = "cal-cell";
-      if (k === todayStr()) cls += " today";
-      if (k === selectedDate) cls += " sel";
-      var cell = el("button", cls); cell.type = "button";
-      cell.appendChild(el("span", "cal-num", String(dd)));
+      var cls = "cal-cell"; if (k === todayStr()) cls += " today"; if (k === selectedDate) cls += " sel";
+      var cell = el("button", cls); cell.type = "button"; cell.appendChild(el("span", "cal-num", String(dd)));
       if (kc > 0) {
         var kcEl = el("span", "cal-kc", fmt(rnd(kc))); kcEl.style.color = kc >= d.kcal ? "var(--s-c)" : "var(--accent)"; cell.appendChild(kcEl);
         var bar = el("span", "cal-bar"); var fl = el("span"); fl.style.width = Math.min(100, kc / (d.kcal * 1.2) * 100) + "%"; fl.style.background = kc >= d.kcal ? "var(--s-c)" : "var(--accent)"; bar.appendChild(fl); cell.appendChild(bar);
@@ -436,31 +491,25 @@
       grid.appendChild(cell);
     }
 
-    // недели месяца
     var wk = $("wk-list"); wk.innerHTML = "";
     var weeks = [], cur = [];
     for (var s = 0; s < start; s++) cur.push(null);
     for (var day = 1; day <= days; day++) { cur.push(day); if (cur.length === 7) { weeks.push(cur); cur = []; } }
     if (cur.length) { while (cur.length < 7) cur.push(null); weeks.push(cur); }
     weeks.forEach(function (w, wi) {
-      var logged = w.filter(function (x) { return x && Array.isArray(state.days[calY + "-" + pad2(calM + 1) + "-" + pad2(x)]) && state.days[calY + "-" + pad2(calM + 1) + "-" + pad2(x)].length; });
+      var pre = calY + "-" + pad2(calM + 1) + "-";
+      var logged = w.filter(function (x) { return x && Array.isArray(state.days[pre + pad2(x)]) && state.days[pre + pad2(x)].length; });
       var agg = { kcal: 0, p: 0, f: 0, c: 0 };
-      logged.forEach(function (x) { var mm = dayMacros(state.days[calY + "-" + pad2(calM + 1) + "-" + pad2(x)]); agg.kcal += mm.kcal; agg.p += mm.p; agg.f += mm.f; agg.c += mm.c; });
+      logged.forEach(function (x) { var mm = dayMacros(state.days[pre + pad2(x)]); agg.kcal += mm.kcal; agg.p += mm.p; agg.f += mm.f; agg.c += mm.c; });
       var n = logged.length || 1;
-      var days_lbl = w.filter(function (x) { return x; });
-      var range = days_lbl.length ? (pad2(days_lbl[0]) + "–" + pad2(days_lbl[days_lbl.length - 1])) : "—";
-      var row = el("div", "wk-row");
-      row.appendChild(el("div", "wk-lbl", "Нед. " + (wi + 1) + " · " + range));
-      if (logged.length === 0) { row.appendChild(el("div", "wk-vals muted", "нет записей")); }
-      else {
-        var vals = el("div", "wk-vals");
-        vals.innerHTML = "<b>" + fmt(rnd(agg.kcal / n)) + "</b> ккал/д · Б " + rnd(agg.p / n) + " · Ж " + rnd(agg.f / n) + " · У " + rnd(agg.c / n) + " <span class='wk-days'>(" + logged.length + " дн.)</span>";
-        row.appendChild(vals);
-      }
+      var dl = w.filter(function (x) { return x; });
+      var range = dl.length ? (pad2(dl[0]) + "–" + pad2(dl[dl.length - 1])) : "—";
+      var row = el("div", "wk-row"); row.appendChild(el("div", "wk-lbl", "Нед. " + (wi + 1) + " · " + range));
+      if (logged.length === 0) row.appendChild(el("div", "wk-vals muted", "нет записей"));
+      else { var vals = el("div", "wk-vals"); vals.innerHTML = "<b>" + fmt(rnd(agg.kcal / n)) + "</b> ккал/д · Б " + rnd(agg.p / n) + " · Ж " + rnd(agg.f / n) + " · У " + rnd(agg.c / n) + " <span class='wk-days'>(" + logged.length + " дн.)</span>"; row.appendChild(vals); }
       wk.appendChild(row);
     });
 
-    // итог месяца
     var monKeys = Object.keys(state.days).filter(function (k) { return k.indexOf(calY + "-" + pad2(calM + 1) + "-") === 0 && Array.isArray(state.days[k]) && state.days[k].length; });
     var mo = $("mo-summary");
     if (monKeys.length === 0) { mo.innerHTML = "<div class='tk-empty'>За этот месяц записей нет.</div>"; return; }
@@ -468,37 +517,26 @@
     monKeys.forEach(function (k) { var mm = dayMacros(state.days[k]); sum.kcal += mm.kcal; sum.p += mm.p; sum.f += mm.f; sum.c += mm.c; });
     var nn = monKeys.length, diff = sum.kcal / nn - d.kcal;
     mo.innerHTML = "";
-    var tiles = [
-      { l: "Дней записано", v: nn, s: "из " + days },
-      { l: "Ккал/день", v: fmt(rnd(sum.kcal / nn)), s: (Math.abs(diff) < 80 ? "в цель" : (diff > 0 ? "+" + rnd(diff) : rnd(diff))) },
-      { l: "Белок/день", v: rnd(sum.p / nn), s: "цель " + d.p },
-      { l: "Ж / У в день", v: rnd(sum.f / nn) + " / " + rnd(sum.c / nn), s: "г" }
-    ];
-    tiles.forEach(function (t) { var k = el("div", "kpi"); k.appendChild(el("span", "k-label", t.l)); var v = el("span", "k-val"); v.innerHTML = t.v + " <small>" + t.s + "</small>"; k.appendChild(v); mo.appendChild(k); });
+    [{ l: "Дней записано", v: nn, s: "из " + days }, { l: "Ккал/день", v: fmt(rnd(sum.kcal / nn)), s: (Math.abs(diff) < 80 ? "в цель" : (diff > 0 ? "+" + rnd(diff) : rnd(diff))) }, { l: "Белок/день", v: rnd(sum.p / nn), s: "цель " + d.p }, { l: "Ж / У в день", v: rnd(sum.f / nn) + " / " + rnd(sum.c / nn), s: "г" }].forEach(function (t) { var k = el("div", "kpi"); k.appendChild(el("span", "k-label", t.l)); var v = el("span", "k-val"); v.innerHTML = t.v + " <small>" + t.s + "</small>"; k.appendChild(v); mo.appendChild(k); });
   }
 
   /* ══════════ render: план ══════════ */
   function renderPlan() {
     var host = $("plan-meals"); host.innerHTML = "";
     PLAN_MEALS.forEach(function (meal) {
-      var card = el("div", "plan-meal");
-      card.appendChild(el("div", "plan-meal-name", meal.name));
+      var card = el("div", "plan-meal"); card.appendChild(el("div", "plan-meal-name", meal.name));
       meal.options.forEach(function (o) {
-        var row = el("div", "plan-opt");
-        row.appendChild(el("span", "plan-key", o.k));
-        var body = el("div", "plan-body");
-        body.appendChild(el("div", "plan-what", o.what));
+        var row = el("div", "plan-opt"); row.appendChild(el("span", "plan-key", o.k));
+        var body = el("div", "plan-body"); body.appendChild(el("div", "plan-what", o.what));
         var meta = el("div", "plan-meta");
         meta.appendChild(el("span", "plan-tag" + (o.cook === 0 ? " zero" : ""), o.cook === 0 ? "0 мин" : o.cook + " мин у плиты"));
         meta.appendChild(el("span", "plan-macros", fmt(o.kcal) + " ккал · Б " + o.p + " · Ж " + o.f + " · У " + o.c));
-        body.appendChild(meta);
-        row.appendChild(body);
+        body.appendChild(meta); row.appendChild(body);
         (function (mealName, opt) { row.appendChild(mkBtn("+ в день", function () { addExample(mealName, opt); }, "plan-add")); })(meal.name, o);
         card.appendChild(row);
       });
       host.appendChild(card);
     });
-
     var rc = $("recipes"); rc.innerHTML = "";
     RECIPES.forEach(function (r) {
       var card = el("div", "recipe");
@@ -510,30 +548,22 @@
     });
   }
 
-  /* ══════════ view switching ══════════ */
   function showView(name) {
     view = name;
-    $("view-day").hidden = name !== "day";
-    $("view-cal").hidden = name !== "cal";
-    $("view-plan").hidden = name !== "plan";
+    $("view-day").hidden = name !== "day"; $("view-cal").hidden = name !== "cal"; $("view-plan").hidden = name !== "plan";
     Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) { t.classList.toggle("active", t.getAttribute("data-view") === name); });
     if (name === "cal") renderCalendar();
     if (name === "day") { renderDateNav(); renderTracker(); renderHistory(); }
     window.scrollTo(0, 0);
   }
-
-  function renderAll() { renderKpi(); renderDateNav(); renderTracker(); renderHistory(); renderAuth(); if (view === "cal") renderCalendar(); }
+  function renderAll() { renderKpi(); renderDateNav(); renderTracker(); renderLibrary(); renderHistory(); renderAuth(); updateSavebar(); if (view === "cal") renderCalendar(); }
 
   /* ══════════ export / import ══════════ */
-  function exportData() {
-    commitDay();
-    var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ration-" + todayStr() + ".json"; a.click(); URL.revokeObjectURL(a.href);
-  }
+  function exportData() { commitDay(); var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ration-" + todayStr() + ".json"; a.click(); URL.revokeObjectURL(a.href); }
   function importData(file) {
     var r = new FileReader();
     r.onload = function () {
-      try { var o = JSON.parse(r.result); if (!o || !o.days) throw new Error("bad"); state = { days: o.days, updatedAt: Date.now() }; hydrateDay(selectedDate, false); saveLocal(); pushRemoteSoon(); renderAll(); banner("Данные импортированы ✓", "ok"); }
+      try { var o = JSON.parse(r.result); if (!o || !o.days) throw new Error("bad"); state = { days: o.days, norm: o.norm || null, customProducts: Array.isArray(o.customProducts) ? o.customProducts : [], updatedAt: Date.now() }; hydrateDay(selectedDate, false); saveLocal(); pendingCloud = true; renderAll(); banner("Данные импортированы ✓. Нажми «Сохранить», чтобы отправить в облако.", "ok"); }
       catch (e) { banner("Не удалось прочитать файл — это не наш экспорт.", "warn"); }
     };
     r.readAsText(file);
@@ -541,36 +571,43 @@
 
   /* ══════════ init ══════════ */
   function setup() {
-    // вкладки
     Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) { t.addEventListener("click", function () { showView(t.getAttribute("data-view")); }); });
-    // фаза
-    Array.prototype.forEach.call(document.querySelectorAll(".switch button"), function (b) {
-      b.addEventListener("click", function () {
-        current = +b.getAttribute("data-phase");
-        Array.prototype.forEach.call(document.querySelectorAll(".switch button"), function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
-        renderAll();
-      });
-    });
-    // навигация по датам
+
+    // норма
+    $("norm-edit").addEventListener("click", function () { var f = $("norm-form"); f.hidden = !f.hidden; if (!f.hidden) fillNormForm(); });
+    $("norm-ok").addEventListener("click", saveNorm);
+
+    // даты
     $("date-prev").addEventListener("click", function () { shiftDate(-1); });
     $("date-next").addEventListener("click", function () { shiftDate(1); });
     $("date-today").addEventListener("click", function () { setDate(todayStr()); });
     $("date-input").addEventListener("change", function (e) { if (e.target.value) setDate(e.target.value); });
-    // календарь nav
+
+    // календарь
     var now = new Date(); calY = now.getFullYear(); calM = now.getMonth();
     $("cal-prev").addEventListener("click", function () { calM--; if (calM < 0) { calM = 11; calY--; } renderCalendar(); });
     $("cal-next").addEventListener("click", function () { calM++; if (calM > 11) { calM = 0; calY++; } renderCalendar(); });
+
     // приёмы
     var mc = $("tk-mealchips"); MEAL_NAMES.forEach(function (nm) { var b = el("button", "tk-chip", "+ " + nm); b.type = "button"; b.addEventListener("click", function () { addMeal(nm); }); mc.appendChild(b); });
     renderLibrary(); renderPlan();
-    // форма
-    $("tk-form").addEventListener("submit", function (e) {
-      e.preventDefault(); var kcalEl = $("tk-f-kcal"), kcal = parseFloat(kcalEl.value); if (isNaN(kcal)) { kcalEl.focus(); return; }
-      addProduct({ name: $("tk-f-name").value.trim() || "Продукт", kcal: kcal, p: parseFloat($("tk-f-p").value) || 0, f: parseFloat($("tk-f-f").value) || 0, c: parseFloat($("tk-f-c").value) || 0 });
-      e.target.reset(); $("tk-f-name").focus();
-    });
+
+    // форма своего продукта: «в день» (разово) и «в базу» (в библиотеку)
+    function readForm() { var kcal = parseFloat($("tk-f-kcal").value); return { name: $("tk-f-name").value.trim(), kcal: kcal, p: parseFloat($("tk-f-p").value) || 0, f: parseFloat($("tk-f-f").value) || 0, c: parseFloat($("tk-f-c").value) || 0 }; }
+    function clearForm() { $("tk-form").reset(); $("tk-f-name").focus(); }
+    $("tk-add-day").addEventListener("click", function () { var o = readForm(); if (isNaN(o.kcal)) { $("tk-f-kcal").focus(); return; } o.name = o.name || "Продукт"; addProduct(o); clearForm(); });
+    $("tk-form").addEventListener("submit", function (e) { e.preventDefault(); var o = readForm(); if (!o.name) { $("tk-f-name").focus(); return; } if (isNaN(o.kcal)) { $("tk-f-kcal").focus(); return; } if (addCustomProduct(o)) clearForm(); });
+
+    // очистка / перенос
     $("tk-reset").addEventListener("click", resetDay);
-    $("tk-persist").textContent = HAS_CFG ? "локально + облако (если вошёл)" : "локально в этом браузере";
+    $("move-toggle").addEventListener("click", function () { var b = $("move-box"); b.hidden = !b.hidden; if (!b.hidden) { var y = parseKey(selectedDate); y.setDate(y.getDate() - 1); $("move-date").value = keyOf(y); } });
+    $("move-go").addEventListener("click", function () { moveDay($("move-date").value); });
+
+    // сохранение в облако
+    $("save-btn").addEventListener("click", saveCloud);
+    window.addEventListener("beforeunload", function (e) { if (session && pendingCloud) { e.preventDefault(); e.returnValue = ""; } });
+
+    $("tk-persist").textContent = HAS_CFG ? "Локально сохраняется сразу. В облако — по кнопке «Сохранить»." : "Локально в этом браузере.";
     $("btn-export").addEventListener("click", exportData);
     $("btn-import").addEventListener("click", function () { $("import-file").click(); });
     $("import-file").addEventListener("change", function (e) { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ""; });
