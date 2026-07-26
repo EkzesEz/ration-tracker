@@ -1,0 +1,14 @@
+{
+  "name": "Мой рацион — трекер",
+  "short_name": "Рацион",
+  "description": "Трекер калорий и БЖУ на набор массы с историей и синхронизацией.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#191b19",
+  "theme_color": "#191b19",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

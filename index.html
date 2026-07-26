@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#191b19" />
+  <title>Мой рацион — трекер</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+
+    <header class="app-head">
+      <div class="brand">
+        <span class="brand-mark">🍚</span>
+        <div>
+          <h1>Мой рацион</h1>
+          <p class="brand-sub">трекер набора массы · 69 → 74 кг</p>
+        </div>
+      </div>
+      <div class="auth" id="auth"></div>
+    </header>
+
+    <div class="sync-banner" id="sync-banner" hidden></div>
+
+    <!-- Цели / фаза -->
+    <section class="card">
+      <div class="switch" role="group" aria-label="Фаза плана">
+        <button type="button" data-phase="1" aria-pressed="true">Фаза 1 · 2780</button>
+        <button type="button" data-phase="2" aria-pressed="false">Фаза 2 · 3080</button>
+      </div>
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <!-- Трекер дня -->
+    <section class="card tracker">
+      <div class="tk-top">
+        <div class="tk-head">
+          <span class="tk-eaten" id="tk-eaten">0</span>
+          <span class="tk-target" id="tk-target">/ 2780 ккал</span>
+        </div>
+        <div class="tk-remain" id="tk-remain"></div>
+      </div>
+      <div class="tk-bar"><div class="tk-fill" id="tk-fill"></div></div>
+      <div class="tk-macros" id="tk-macros"></div>
+      <div class="tk-hint" id="tk-hint"></div>
+
+      <div class="tk-meals" id="tk-meals"></div>
+
+      <div class="tk-add">
+        <div class="tk-add-lbl">Добавить приём</div>
+        <div class="tk-mealchips" id="tk-mealchips"></div>
+        <div class="tk-add-lbl">Добавить продукт <span class="tk-active" id="tk-active"></span></div>
+        <div class="tk-quick" id="tk-quick"></div>
+        <div class="tk-add-lbl">Или впиши свой продукт</div>
+        <form class="tk-form" id="tk-form">
+          <input class="tk-in tk-in-name" id="tk-f-name" type="text" placeholder="Напр. Шаурма" aria-label="Название продукта" />
+          <input class="tk-in" id="tk-f-kcal" type="number" inputmode="decimal" step="any" placeholder="ккал" aria-label="Калории" />
+          <input class="tk-in" id="tk-f-p" type="number" inputmode="decimal" step="any" placeholder="Б" aria-label="Белки, г" />
+          <input class="tk-in" id="tk-f-f" type="number" inputmode="decimal" step="any" placeholder="Ж" aria-label="Жиры, г" />
+          <input class="tk-in" id="tk-f-c" type="number" inputmode="decimal" step="any" placeholder="У" aria-label="Углеводы, г" />
+          <button class="tk-addbtn" type="submit">Добавить</button>
+        </form>
+        <div class="tk-actions">
+          <button class="tk-reset" id="tk-reset" type="button">Очистить сегодня</button>
+          <span class="tk-persist" id="tk-persist"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- История -->
+    <section class="card">
+      <div class="card-title">История по дням</div>
+      <div class="card-sub" id="history-avg"></div>
+      <div class="hist-list" id="history-list"></div>
+      <div class="tk-actions" style="margin-top:6px">
+        <button class="tk-reset" id="btn-export" type="button">Экспорт данных</button>
+        <button class="tk-reset" id="btn-import" type="button">Импорт данных</button>
+        <input type="file" id="import-file" accept="application/json" hidden />
+      </div>
+    </section>
+
+    <footer class="app-foot">
+      <p>Данные — это ты. Локальная копия в браузере всегда есть; если настроен синк, они же лежат в твоём Supabase и подтягиваются на любом устройстве, где ты вошёл. План (меню, рецепты, закупка) — в отдельном артефакте.</p>
+    </footer>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
