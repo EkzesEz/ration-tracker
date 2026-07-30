@@ -54,13 +54,57 @@
       { name: "Онигири Филадельфия · 100 г", kcal: 254, p: 5, f: 6, c: 44 },
       { name: "Мясо по-французски с картофелем · 250 г", kcal: 548, p: 18, f: 38, c: 35 }
     ] },
-    { g: "Вкусно и Точка", items: [
-      { name: "Тройной чизбургер · 202 г", kcal: 538, p: 34, f: 29, c: 34 },
-      { name: "Биг Хит (биг мак) · 216 г", kcal: 503, p: 25, f: 25, c: 45 },
-      { name: "Большая картошка фри · 147 г", kcal: 425, p: 5, f: 20, c: 53 },
-      { name: "Пирожок с вишней · 80 г", kcal: 290, p: 2.4, f: 12, c: 43 },
+    // Вкусно и Точка — официальные данные из vkusnoitochka.ru/sostav.pdf (на порцию).
+    { g: "ВиТ · бургеры", items: [
+      { name: "Гамбургер · 97 г", kcal: 252, p: 12, f: 8.2, c: 33 },
+      { name: "Чизбургер · 109 г", kcal: 291, p: 14, f: 11, c: 33 },
+      { name: "Двойной Чизбургер · 158 г", kcal: 416, p: 24, f: 21, c: 34 },
+      { name: "Тройной Чизбургер Три Сыра · 202 г", kcal: 538, p: 34, f: 29, c: 34 },
+      { name: "Чикенбургер · 127 г", kcal: 331, p: 10, f: 14, c: 40 },
+      { name: "Фиш Бургер · 130 г", kcal: 327, p: 13, f: 13, c: 40 },
+      { name: "Двойной Фиш Бургер · 191 г", kcal: 464, p: 22, f: 20, c: 50 },
+      { name: "Чикен Хит · 190 г", kcal: 445, p: 19, f: 19, c: 50 },
+      { name: "Биг Хит · 216 г", kcal: 503, p: 25, f: 25, c: 45 },
+      { name: "Двойной Биг Хит · 284 г", kcal: 676, p: 40, f: 37, c: 46 },
+      { name: "Биг Спешиал · 326 г", kcal: 756, p: 41, f: 42, c: 52 },
+      { name: "Двойной Биг Спешиал · 433 г", kcal: 1042, p: 67, f: 63, c: 52 },
+      { name: "Биг Спешиал Джуниор · 222 г", kcal: 545, p: 30, f: 30, c: 38 },
+      { name: "Гранд Де Люкс · 240 г", kcal: 546, p: 30, f: 28, c: 43 },
+      { name: "Чикен Премьер · 221 г", kcal: 476, p: 22, f: 20, c: 52 },
+      { name: "Биг Чикен Бургер · 313 г", kcal: 678, p: 37, f: 32, c: 58 },
+      { name: "Цезарь Ролл · 195 г", kcal: 429, p: 17, f: 22, c: 41 },
+      { name: "Шримп Ролл · 160 г", kcal: 397, p: 14, f: 17, c: 46 }
+    ] },
+    { g: "ВиТ · снэки и картофель", items: [
+      { name: "Наггетсы 4 шт · 72 г", kcal: 178, p: 11, f: 9.2, c: 12 },
+      { name: "Наггетсы 6 шт · 107 г", kcal: 264, p: 17, f: 14, c: 19 },
+      { name: "Наггетсы 9 шт · 161 г", kcal: 397, p: 25, f: 21, c: 28 },
+      { name: "Куриные стрипсы 3 шт · 99 г", kcal: 223, p: 14, f: 10, c: 19 },
+      { name: "Куриные стрипсы 5 шт · 165 г", kcal: 371, p: 23, f: 17, c: 31 },
+      { name: "Сырные палочки Моцарелла", kcal: 258, p: 13, f: 9.2, c: 30 },
+      { name: "Снэк Бокс · 196 г", kcal: 500, p: 20, f: 24, c: 49 },
+      { name: "Картофель фри маленький · 76 г", kcal: 220, p: 2.6, f: 10, c: 28 },
+      { name: "Картофель фри средний · 110 г", kcal: 318, p: 3.7, f: 15, c: 40 },
+      { name: "Картофель фри большой · 147 г", kcal: 425, p: 5, f: 20, c: 53 },
+      { name: "Картофель фри двойной", kcal: 636, p: 7.5, f: 30, c: 80 },
+      { name: "Картофель по-деревенски · 165 г", kcal: 331, p: 4.6, f: 15, c: 42 },
+      { name: "Картофель по-деревенски · 220 г", kcal: 441, p: 6.2, f: 20, c: 57 },
+      { name: "Салат Овощной", kcal: 36, p: 1.1, f: 2.5, c: 2.3 },
+      { name: "Салат Цезарь", kcal: 189, p: 14, f: 9.5, c: 12 }
+    ] },
+    { g: "ВиТ · соусы, напитки, десерты", items: [
       { name: "Сырный соус · 25 г", kcal: 91, p: 0.5, f: 9.2, c: 1.5 },
-      { name: "Кола зеро · 500 мл", kcal: 2, p: 0, f: 0, c: 0.5 }
+      { name: "Кола зеро · 500 мл", kcal: 2, p: 0, f: 0, c: 0.5 },
+      { name: "Добрый Кола · 500 мл", kcal: 212, p: 0, f: 0, c: 53 },
+      { name: "Коктейль молочный · 400 мл", kcal: 309, p: 7.3, f: 6, c: 57 },
+      { name: "Пирожок с вишней · 80 г", kcal: 290, p: 2.4, f: 12, c: 43 },
+      { name: "Пирожок Лесные Ягоды-кремчиз · 79 г", kcal: 271, p: 3.1, f: 14, c: 33 }
+    ] },
+    // Готовые блюда из доставки — по этикеткам (значения на весь продукт).
+    { g: "Готовое · доставка", items: [
+      { name: "Спагетти болоньезе Red Box · 300 г", kcal: 483, p: 18, f: 18, c: 63 },
+      { name: "Ролл с крабом и масаго Кулинариум · 215 г", kcal: 645, p: 13.5, f: 19.6, c: 103.6 },
+      { name: "Круассан с ветчиной и сыром · 115 г", kcal: 472, p: 11.5, f: 36.8, c: 23 }
     ] }
   ];
 
@@ -161,12 +205,18 @@
   function labelDate(k) { var d = parseKey(k); return DOW[dowMon(d)] + ", " + pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + (k === todayStr() ? " · сегодня" : ""); }
 
   /* ══════════ state ══════════ */
-  var LKEY = "ration-app-v1";
+  // Локальное хранилище своё у каждого аккаунта: до входа — "anon", после — по id
+  // пользователя. Иначе на одном устройстве разные аккаунты видели бы чужой день.
+  var LKEY_OLD = "ration-app-v1";
+  var LKEY_PREFIX = "ration-app-v2::";
+  var currentUserId = null;
+  function lkey() { return LKEY_PREFIX + (currentUserId || "anon"); }
   var uid = 0;
   var view = "day";
   var selectedDate = todayStr();
   var calY, calM;
-  var state = { days: {}, norm: null, customProducts: [], updatedAt: 0 };
+  var state = { days: {}, norm: null, customProducts: [], sharedCache: [], updatedAt: 0 };
+  var sharedProducts = [];   // общая база продуктов (все пользователи)
   var meals = [];
   var activeId = null;
   var openState = {}, libOpen = {};
@@ -177,7 +227,7 @@
   function N() { return state.norm || DEFAULT_NORM; }
   function makeMeal(name, items) { return { id: ++uid, name: name || "Приём", items: (items || []).map(cloneItem) }; }
   function buildFrom(list) { return (list || []).map(function (m) { return makeMeal(m.name, m.items); }); }
-  function saveLocal() { if (LS) { try { LS.setItem(LKEY, JSON.stringify(state)); } catch (e) {} } }
+  function saveLocal() { if (LS) { try { LS.setItem(lkey(), JSON.stringify(state)); } catch (e) {} } }
   function commitDay() { state.days[selectedDate] = meals.map(function (m) { return { name: m.name, items: m.items.map(cloneItem) }; }); }
 
   // Любое изменение: пишем локально сразу (не теряется), но в облако — только по кнопке.
@@ -193,15 +243,23 @@
   }
 
   function loadLocal() {
-    var raw = LS ? LS.getItem(LKEY) : null, parsed = null;
+    var raw = LS ? LS.getItem(lkey()) : null, parsed = null;
+    // Разовый перенос данных со старого общего ключа в хранилище "anon".
+    if (raw === null && LS && !currentUserId) {
+      var old = LS.getItem(LKEY_OLD);
+      if (old !== null) { raw = old; try { LS.setItem(lkey(), old); } catch (e) {} }
+    }
     if (raw !== null) { try { parsed = JSON.parse(raw); } catch (e) {} }
     state = {
       days: (parsed && parsed.days) ? parsed.days : {},
       norm: (parsed && parsed.norm) ? parsed.norm : null,
       customProducts: (parsed && Array.isArray(parsed.customProducts)) ? parsed.customProducts : [],
+      sharedCache: (parsed && Array.isArray(parsed.sharedCache)) ? parsed.sharedCache : [],
       updatedAt: (parsed && parsed.updatedAt) || 0
     };
-    hydrateDay(selectedDate, true);
+    sharedProducts = state.sharedCache || [];
+    pendingCloud = false;
+    hydrateDay(selectedDate, !currentUserId);
   }
 
   /* ══════════ Supabase sync ══════════ */
@@ -235,7 +293,25 @@
       sb.auth.onAuthStateChange(function (_e, s) { session = s; onAuthChange(); });
     }).catch(function () { banner("Не удалось загрузить библиотеку синка (нет сети?). Работаешь локально — данные не потеряются.", "warn"); });
   }
-  function onAuthChange() { renderAuth(); updateSavebar(); if (session) { banner("Вошёл как " + session.user.email + ". Тяну свежее из облака…", "ok"); pullRemote(); } else banner("Не в аккаунте — данные только на этом устройстве. Войди, чтобы сохранять в облако.", "warn"); }
+  function onAuthChange() {
+    var newId = session ? session.user.id : null;
+    if (newId !== currentUserId) {
+      // Аккаунт сменился: сохраняем текущее хранилище и переключаемся на другое.
+      saveLocal();
+      currentUserId = newId;
+      loadLocal();
+      renderAll();
+    }
+    renderAuth(); updateSavebar();
+    if (session) {
+      banner("Вошёл как " + session.user.email + ". Тяну свежее из облака…", "ok");
+      pullRemote(); loadShared();
+    } else {
+      sharedProducts = state.sharedCache || [];
+      renderLibrary();
+      banner("Не в аккаунте — данные только на этом устройстве. Войди, чтобы сохранять в облако.", "warn");
+    }
+  }
   function pullRemote() {
     if (!sb || !session) return;
     sb.from("tracker_state").select("data, updated_at").eq("user_id", session.user.id).maybeSingle().then(function (r) {
@@ -243,7 +319,7 @@
       var remote = r.data ? r.data.data : null, remoteAt = remote && remote.updatedAt ? remote.updatedAt : 0;
       // Облако новее локального — принимаем (но не затираем несохранённые локальные правки).
       if (remote && remoteAt > (state.updatedAt || 0) && !pendingCloud) {
-        state = { days: remote.days || {}, norm: remote.norm || null, customProducts: remote.customProducts || [], updatedAt: remoteAt };
+        state = { days: remote.days || {}, norm: remote.norm || null, customProducts: remote.customProducts || [], sharedCache: sharedProducts || [], updatedAt: remoteAt };
         hydrateDay(selectedDate, false); saveLocal(); renderAll();
         banner("Синхронизировано ✓ (подтянул свежую версию из облака).", "ok");
       } else if (remote && remoteAt > (state.updatedAt || 0) && pendingCloud) {
@@ -337,15 +413,47 @@
     banner("Добавлено «" + mealName + " " + opt.k + "» в день " + labelDate(selectedDate).replace(" · сегодня", "") + " ✓", "ok");
   }
 
-  /* ══════════ свои продукты в базе ══════════ */
+  /* ══════════ общая база продуктов ══════════ */
+  // Вошёл — продукт уезжает в общую таблицу и виден всем, группа названа логином
+  // автора. Не вошёл — падает в локальный список этого устройства.
   function addCustomProduct(o) {
     if (!o.name || isNaN(o.kcal)) return false;
-    state.customProducts.push({ name: o.name, kcal: +o.kcal, p: +o.p || 0, f: +o.f || 0, c: +o.c || 0 });
-    saveLocal(); pendingCloud = true; updateSavebar(); renderLibrary();
-    banner("Продукт «" + o.name + "» добавлен в базу (группа «Мои продукты»). Не забудь «Сохранить».", "ok");
+    var rec = { name: o.name, kcal: +o.kcal, p: +o.p || 0, f: +o.f || 0, c: +o.c || 0 };
+    if (sb && session) {
+      sb.from("shared_products").insert(Object.assign({ user_id: session.user.id, author: authorOf(session.user.email) }, rec))
+        .then(function (r) {
+          if (r.error) banner("Не удалось добавить в общую базу (" + r.error.message + ").", "warn");
+          else { banner("Продукт «" + o.name + "» добавлен в общую базу — его видят все ✓", "ok"); loadShared(); }
+        }, function () { banner("Сеть недоступна — продукт в общую базу не ушёл.", "warn"); });
+    } else {
+      state.customProducts.push(rec);
+      saveLocal(); pendingCloud = true; updateSavebar(); renderLibrary();
+      banner("Продукт «" + o.name + "» добавлен локально. Войди, чтобы он попал в общую базу.", "ok");
+    }
     return true;
   }
   function removeCustomProduct(idx) { state.customProducts.splice(idx, 1); saveLocal(); pendingCloud = true; updateSavebar(); renderLibrary(); }
+
+  function authorOf(email) { return String(email || "аноним").split("@")[0]; }
+  function loadShared() {
+    if (!sb || !session) return;
+    sb.from("shared_products").select("id,user_id,author,name,kcal,p,f,c").order("created_at", { ascending: true })
+      .then(function (r) {
+        if (r.error) { banner("Общая база продуктов недоступна (" + r.error.message + "). Показываю сохранённую копию.", "warn"); return; }
+        sharedProducts = (r.data || []).map(function (x) {
+          return { id: x.id, user_id: x.user_id, author: x.author, name: x.name, kcal: +x.kcal, p: +x.p, f: +x.f, c: +x.c };
+        });
+        state.sharedCache = sharedProducts; saveLocal();
+        renderLibrary();
+      }, function () { /* офлайн — остаётся кэш */ });
+  }
+  function removeSharedProduct(id) {
+    if (!sb || !session) return;
+    sb.from("shared_products").delete().eq("id", id).then(function (r) {
+      if (r.error) banner("Не удалось удалить (" + r.error.message + "). Удалять можно только свои продукты.", "warn");
+      else loadShared();
+    }, function () { banner("Сеть недоступна — удалить не вышло.", "warn"); });
+  }
 
   /* ══════════ поиск в USDA FoodData Central ══════════ */
   var USDA_KEY = CFG.USDA_API_KEY || "";
@@ -491,8 +599,26 @@
 
   function renderLibrary() {
     var q = $("tk-quick"); q.innerHTML = "";
-    var groups = LIB.slice();
-    if (state.customProducts && state.customProducts.length) groups = [{ g: "Мои продукты", custom: true, items: state.customProducts }].concat(groups);
+    var groups = [];
+
+    // Общая база: группы названы логином автора, свои позиции можно удалять.
+    var byAuthor = {};
+    (sharedProducts || []).forEach(function (o) {
+      var a = o.author || "аноним";
+      (byAuthor[a] = byAuthor[a] || []).push(o);
+    });
+    var mine = session ? authorOf(session.user.email) : null;
+    Object.keys(byAuthor).sort(function (a, b) {
+      if (a === mine) return -1; if (b === mine) return 1; return a.localeCompare(b);
+    }).forEach(function (a) {
+      groups.push({ g: a + (a === mine ? " · ты" : ""), shared: true, items: byAuthor[a] });
+    });
+
+    if (state.customProducts && state.customProducts.length)
+      groups.push({ g: "Мои продукты (локально)", custom: true, items: state.customProducts });
+
+    groups = groups.concat(LIB);
+
     groups.forEach(function (grp) {
       var wrap = el("div", "tk-group"); wrap.appendChild(el("div", "tk-group-lbl", grp.g));
       var chips = el("div", "tk-group-chips");
@@ -500,7 +626,13 @@
         var open = !!libOpen[o.name], item = el("div", "tk-libitem");
         item.appendChild(mkBtn((open ? "▾ " : "▸ ") + o.name + " · " + o.kcal, function () { toggleLib(o.name); }, "tk-libname"));
         var add = mkBtn("+", function () { addProduct(o); }, "tk-libadd"); add.setAttribute("aria-label", "Добавить: " + o.name); item.appendChild(add);
-        if (grp.custom) { var del = mkBtn("×", function () { removeCustomProduct(idx); }, "tk-libdel"); del.setAttribute("aria-label", "Удалить из базы: " + o.name); item.appendChild(del); }
+        if (grp.custom) {
+          var del = mkBtn("×", function () { removeCustomProduct(idx); }, "tk-libdel");
+          del.setAttribute("aria-label", "Удалить: " + o.name); item.appendChild(del);
+        } else if (grp.shared && session && o.user_id === session.user.id) {
+          var sdel = mkBtn("×", function () { removeSharedProduct(o.id); }, "tk-libdel");
+          sdel.setAttribute("aria-label", "Удалить из общей базы: " + o.name); item.appendChild(sdel);
+        }
         chips.appendChild(item);
         if (open) chips.appendChild(el("div", "tk-libdetail", "Б " + o.p + " · Ж " + o.f + " · У " + o.c + " г на порцию"));
       });
@@ -621,7 +753,7 @@
   function importData(file) {
     var r = new FileReader();
     r.onload = function () {
-      try { var o = JSON.parse(r.result); if (!o || !o.days) throw new Error("bad"); state = { days: o.days, norm: o.norm || null, customProducts: Array.isArray(o.customProducts) ? o.customProducts : [], updatedAt: Date.now() }; hydrateDay(selectedDate, false); saveLocal(); pendingCloud = true; renderAll(); banner("Данные импортированы ✓. Нажми «Сохранить», чтобы отправить в облако.", "ok"); }
+      try { var o = JSON.parse(r.result); if (!o || !o.days) throw new Error("bad"); state = { days: o.days, norm: o.norm || null, customProducts: Array.isArray(o.customProducts) ? o.customProducts : [], sharedCache: sharedProducts || [], updatedAt: Date.now() }; hydrateDay(selectedDate, false); saveLocal(); pendingCloud = true; renderAll(); banner("Данные импортированы ✓. Нажми «Сохранить», чтобы отправить в облако.", "ok"); }
       catch (e) { banner("Не удалось прочитать файл — это не наш экспорт.", "warn"); }
     };
     r.readAsText(file);
