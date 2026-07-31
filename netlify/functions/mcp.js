@@ -153,16 +153,35 @@ async function handleMessage(msg, token) {
   return err(id === undefined ? null : id, -32601, "Method not found: " + method);
 }
 
-/* ── HTTP-обёртка ── */
+/* ── HTTP-обёртка (Streamable HTTP) ──
+   Клиент (в т.ч. claude.ai) присылает Accept: application/json, text/event-stream.
+   Если он готов принять поток — отвечаем SSE-кадрами, иначе обычным JSON. */
+function sseBody(objs) {
+  return objs.map(o => "event: message\ndata: " + JSON.stringify(o) + "\n\n").join("");
+}
+function newSessionId() {
+  return "sess-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+}
+
 exports.handler = async function (event) {
   const method = event.httpMethod;
   if (method === "OPTIONS") return { statusCode: 204, headers: CORS, body: "" };
+  if (method === "DELETE") return { statusCode: 204, headers: CORS, body: "" }; // завершение сессии
+
+  const headers = event.headers || {};
+  const hdr = n => headers[n] || headers[n.toLowerCase()] || headers[n.toUpperCase()] || "";
+  const accept = String(hdr("accept")).toLowerCase();
+  const wantsSSE = accept.includes("text/event-stream");
 
   const qs = event.queryStringParameters || {};
-  const auth = (event.headers && (event.headers.authorization || event.headers.Authorization)) || "";
+  const auth = String(hdr("authorization"));
   const token = qs.t || qs.token || (auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "");
 
   if (method === "GET") {
+    // По спеке: если сервер не открывает отдельный SSE-поток по GET — 405.
+    if (wantsSSE) {
+      return { statusCode: 405, headers: { ...CORS, "content-type": "application/json" }, body: JSON.stringify(err(null, -32000, "SSE stream via GET is not supported; use POST")) };
+    }
     return {
       statusCode: 200,
       headers: { ...CORS, "content-type": "application/json" },
@@ -179,16 +198,32 @@ exports.handler = async function (event) {
 
   const batch = Array.isArray(payload);
   const messages = batch ? payload : [payload];
+  const isInit = messages.some(m => m && m.method === "initialize");
+
   const out = [];
   for (const m of messages) {
     const res = await handleMessage(m, token);
     if (res) out.push(res);
   }
-  if (out.length === 0) return { statusCode: 202, headers: CORS, body: "" };
 
+  const sessionHeader = {};
+  const existing = hdr("mcp-session-id");
+  sessionHeader["mcp-session-id"] = existing || (isInit ? newSessionId() : "");
+  if (!sessionHeader["mcp-session-id"]) delete sessionHeader["mcp-session-id"];
+
+  // Только уведомления — тела нет.
+  if (out.length === 0) return { statusCode: 202, headers: { ...CORS, ...sessionHeader }, body: "" };
+
+  if (wantsSSE) {
+    return {
+      statusCode: 200,
+      headers: { ...CORS, ...sessionHeader, "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" },
+      body: sseBody(batch ? [out] : out)
+    };
+  }
   return {
     statusCode: 200,
-    headers: { ...CORS, "content-type": "application/json" },
+    headers: { ...CORS, ...sessionHeader, "content-type": "application/json" },
     body: JSON.stringify(batch ? out : out[0])
   };
 };
