@@ -6,3 +6,10 @@
 
 [build.environment]
   NODE_VERSION = "18"
+
+# Короткий адрес для MCP-коннектора: https://<сайт>/mcp?t=<токен>
+[[redirects]]
+  from = "/mcp"
+  to = "/.netlify/functions/mcp"
+  status = 200
+  force = true

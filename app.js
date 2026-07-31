@@ -327,10 +327,33 @@
       } else { banner("Готово. Несохранённое отправится в облако по кнопке «Сохранить».", "ok"); }
     });
   }
+  // Перед отправкой подтягиваем свежее из облака и добавляем дни, которых у нас
+  // нет (их мог записать MCP из чата), чтобы сохранение их не затёрло.
+  function mergeRemoteOnlyDays() {
+    if (!sb || !session) return Promise.resolve();
+    return sb.from("tracker_state").select("data").eq("user_id", session.user.id).maybeSingle().then(function (r) {
+      var remote = (!r.error && r.data) ? r.data.data : null;
+      if (!remote || !remote.days) return;
+      var added = 0;
+      Object.keys(remote.days).forEach(function (k) {
+        var mine = state.days[k];
+        if ((!Array.isArray(mine) || mine.length === 0) && Array.isArray(remote.days[k]) && remote.days[k].length) {
+          state.days[k] = remote.days[k]; added++;
+        }
+      });
+      if (added) { hydrateDay(selectedDate, false); renderAll(); }
+    }, function () { /* офлайн — сохраняем как есть */ });
+  }
+
   function saveCloud() {
     if (!sb || !session) return;
-    commitDay(); state.updatedAt = Date.now(); saveLocal();
+    commitDay();
     $("savebar-msg").textContent = "Сохраняю…";
+    mergeRemoteOnlyDays().then(doPush);
+  }
+
+  function doPush() {
+    commitDay(); state.updatedAt = Date.now(); saveLocal();
     sb.from("tracker_state").upsert({ user_id: session.user.id, data: state, updated_at: new Date().toISOString() }, { onConflict: "user_id" }).then(function (r) {
       if (r.error) { banner("Не удалось сохранить в облако (" + r.error.message + "). Локально всё на месте.", "warn"); $("savebar-msg").textContent = "Ошибка — попробуй ещё раз"; }
       else { pendingCloud = false; updateSavebar(); banner("Сохранено в облако ✓", "ok"); }
@@ -805,6 +828,10 @@
     // сохранение в облако
     $("save-btn").addEventListener("click", saveCloud);
     window.addEventListener("beforeunload", function (e) { if (session && pendingCloud) { e.preventDefault(); e.returnValue = ""; } });
+    // Вернулись во вкладку — подтянем свежее (вдруг из чата что-то записали).
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && session && !pendingCloud) pullRemote();
+    });
 
     $("tk-persist").textContent = HAS_CFG ? "Локально сохраняется сразу. В облако — по кнопке «Сохранить»." : "Локально в этом браузере.";
     $("btn-export").addEventListener("click", exportData);
