@@ -7,7 +7,15 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# Короткий адрес для MCP-коннектора: https://<сайт>/mcp?t=<токен>
+# MCP-коннектор. Токен передаётся В ПУТИ: https://<сайт>/mcp/<токен>
+# (claude.ai обрезает query-строку, поэтому ?t= не подходит).
+[[redirects]]
+  from = "/mcp/*"
+  to = "/.netlify/functions/mcp/:splat"
+  status = 200
+  force = true
+
+# Без токена — только справка (список инструментов), запись невозможна.
 [[redirects]]
   from = "/mcp"
   to = "/.netlify/functions/mcp"

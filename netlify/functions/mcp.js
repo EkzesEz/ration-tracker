@@ -173,9 +173,14 @@ exports.handler = async function (event) {
   const accept = String(hdr("accept")).toLowerCase();
   const wantsSSE = accept.includes("text/event-stream");
 
+  // Токен ищем в трёх местах. Основной способ — В ПУТИ (/mcp/ТОКЕН): claude.ai
+  // обрезает query-строку у адреса коннектора, поэтому ?t= там не доезжает.
   const qs = event.queryStringParameters || {};
   const auth = String(hdr("authorization"));
-  const token = qs.t || qs.token || (auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "");
+  const rawPath = String(event.path || event.rawUrl || "");
+  const pm = rawPath.match(/\/mcp\/([^/?#]+)/) || rawPath.match(/functions\/mcp\/([^/?#]+)/);
+  const pathToken = pm ? decodeURIComponent(pm[1]) : "";
+  const token = pathToken || qs.t || qs.token || (auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "");
 
   if (method === "GET") {
     // По спеке: если сервер не открывает отдельный SSE-поток по GET — 405.
@@ -185,7 +190,7 @@ exports.handler = async function (event) {
     return {
       statusCode: 200,
       headers: { ...CORS, "content-type": "application/json" },
-      body: JSON.stringify({ name: "ration-tracker MCP", transport: "streamable-http", tools: TOOLS.map(t => t.name), tokenProvided: !!token })
+      body: JSON.stringify({ name: "ration-tracker MCP", transport: "streamable-http", tools: TOOLS.map(t => t.name), tokenProvided: !!token, tokenSource: pathToken ? "path" : (qs.t || qs.token ? "query" : (token ? "header" : "none")) })
     };
   }
   if (method !== "POST") return { statusCode: 405, headers: CORS, body: "Method Not Allowed" };
