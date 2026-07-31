@@ -182,6 +182,12 @@ exports.handler = async function (event) {
   const pathToken = pm ? decodeURIComponent(pm[1]) : "";
   const token = pathToken || qs.t || qs.token || (auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "");
 
+  // Диагностика в логах Netlify (Functions → mcp → Logs). Сам токен не пишем —
+  // только откуда он взялся и по какому пути пришёл запрос.
+  console.log("[mcp] " + method + " path=" + rawPath +
+    " qs=" + Object.keys(qs).join(",") +
+    " tokenSource=" + (pathToken ? "path" : (qs.t || qs.token ? "query" : (token ? "header" : "NONE"))));
+
   if (method === "GET") {
     // По спеке: если сервер не открывает отдельный SSE-поток по GET — 405.
     if (wantsSSE) {
